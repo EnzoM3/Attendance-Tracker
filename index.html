@@ -5,133 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Manager - FastAPI + Alpine.js</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> 
-</head>
-<body class="bg-slate-100 min-h-screen p-8">
-
-    <main x-data="attendanceApp()"> 
-
-        <section>
-            <h2>Mark Attendance</h2>
-            
-            <form @submit.prevent="addAttendance()">
-                <div> 
-                    <!-- FIX INSTRUCTION: Remove "add" attribute from label so it reads: <label for="student_id"> -->
-                    <label for="student_id" add id="student_id">Student ID</label>
-                    <!-- FIX INSTRUCTION: Add id="student_id" to the input tag below -->
-                    <input type="number" x-model.number="formData.student_id"> 
-                    <label for="student_id" add id="student_id">Student ID</label>
-                </div>
-
-                <div>
-                    <label for="student_name">Student Name</label>
-                    <input type="text" x-model="formData.student_name" id="student_name">
-                </div>
-
-                <div>
-                    <label for="status">Status</label>
-                      
-                    <!-- FIX INSTRUCTION: Remove invalid attribute type="text" from the <select> tag -->
-                    <select id="status" x-model="formData.status">
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                    </select>
-                </div>
-
-                <button type="submit">Submit Entry</button>
-            </form>
-        </section>
-
-        <!-- SECTION 2: ATTENDANCE RECORDS TABLE -->
-        <section>
-            <h2>Attendance Log</h2>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Student ID</th>
-                        <th>Student Name</th>
-                        <th>Status</th> 
-                        <th>Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <!-- FIX INSTRUCTION: Add missing opening <tbody> tag here right below <thead> -->
-                
-                    
-                    <template x-for="record in records" :key="record.id">
-                    -->
-                    <template x-for="record in records" :key="record.id">
-                        <tr>
-                            <td x-text="record.id"> </td>   
-                            <td x-text="record.student_id"> </td>
-                            <td x-text="record.student_name"> </td>
-                            <td x-text="record.status"> </td>
-                            <td x-text="record.create_at"> </td> 
-                        </tr>
-                    </template>
-
-                    <tr x-show="!loading && records.length === 0">  
-                        <td colspan="5">No attendance records found.</td>
-                    </tr> 
-                </tbody>
-            </table>
-        </section>
-
-    </main>
-
-    <!-- 
-      ========================================================================
-      STEP 3: ALPINE.JS COMPONENT LOGIC
-      ========================================================================
-    -->
+    
     <script>
-        <!-- FIX INSTRUCTION: Register component with Alpine before Alpine loads. Wrap returning object with Alpine.data('attendanceApp', () => ({ ... })) -->
-        function attendanceApp() {
-            return {
-                // -------------------------------------------------------------
-                // 1. STATE PROPERTIES
-                // -------------------------------------------------------------
+        // Register Alpine component BEFORE Alpine script loads
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('attendanceApp', () => ({
                 records: [],  
                 formData: { student_id: '', student_name: '', status: 'Present' },
                 loading: true,
 
-                // -------------------------------------------------------------
-                // 2. COMPONENT INITIALIZATION
-                // -------------------------------------------------------------
                 async init() {
                     await this.fetchAttendance();
                 },
 
-                // -------------------------------------------------------------
-                // 3. FETCH GET METHOD (READ RECORDS)
-                // -------------------------------------------------------------
                 async fetchAttendance() {
-    this.loading = true;
-    try {
-        const res = await fetch("http://127.0.0.1:5500/");
-        if (!res.ok)
-            throw Error("Server Error");
-        this.records = await res.json();
-    } catch (err) {
-        console.error(err);
-    } finally { 
-        // This will always run whether fetch succeeded or threw an error
-        this.loading = false; 
-    }
-},
+                    this.loading = true;
+                    try {
+                        // Make sure port matches your FastAPI server (e.g. 8000 or 5500)
+                        const res = await fetch("http://127.0.0.1:8000/");
+                        if (!res.ok) throw Error("Server Error");
+                        this.records = await res.json();
+                    } catch (err) {
+                        console.error(err);
+                    } finally { 
+                        this.loading = false; 
+                    }
+                },
 
-                // -------------------------------------------------------------
-                // 4. FETCH POST METHOD (SUBMIT ATTENDANCE)
-                // -------------------------------------------------------------
                 async addAttendance() {
                     if (!this.formData.student_id || !this.formData.student_name) return;
                   
-                    <!-- FIX INSTRUCTION: Change option name 'header' to 'headers' (plural) -->
-                    const res = await fetch("http://127.0.0.1:5500/mark-attendance", {
+                    // Fixed 'header' -> 'headers'
+                    const res = await fetch("http://127.0.0.1:8000/mark-attendance", {
                         method: 'POST', 
-                        header: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(this.formData)
                     }); 
 
@@ -140,9 +47,76 @@
                         await this.fetchAttendance();
                     }
                 }
-            }
-        }
+            }));
+        });
     </script>
+    <!-- Alpine JS Script loaded after initializing definition -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> 
+</head>
+<body class="bg-slate-100 min-h-screen p-8">
+
+    <main x-data="attendanceApp"> 
+
+        <section class="max-w-xl mx-auto bg-white p-6 rounded shadow mb-8">
+            <h2 class="text-xl font-bold mb-4">Mark Attendance</h2>
+            
+            <form @submit.prevent="addAttendance()" class="space-y-4">
+                <div> 
+                    <label for="student_id" class="block text-sm font-medium">Student ID</label>
+                    <input type="number" id="student_id" x-model.number="formData.student_id" class="w-full border p-2 rounded"> 
+                </div>
+
+                <div>
+                    <label for="student_name" class="block text-sm font-medium">Student Name</label>
+                    <input type="text" id="student_name" x-model="formData.student_name" class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label for="status" class="block text-sm font-medium">Status</label>
+                    <select id="status" x-model="formData.status" class="w-full border p-2 rounded">
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit Entry</button>
+            </form>
+        </section>
+
+        <!-- ATTENDANCE RECORDS TABLE -->
+        <section class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-bold mb-4">Attendance Log</h2>
+
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b">
+                        <th class="p-2">ID</th>
+                        <th class="p-2">Student ID</th>
+                        <th class="p-2">Student Name</th>
+                        <th class="p-2">Status</th> 
+                        <th class="p-2">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="record in records" :key="record.id">
+                        <tr class="border-b">
+                            <td class="p-2" x-text="record.id"></td>   
+                            <td class="p-2" x-text="record.student_id"></td>
+                            <td class="p-2" x-text="record.student_name"></td>
+                            <td class="p-2" x-text="record.status"></td>
+                            <!-- Fixed field name: created_at -->
+                            <td class="p-2" x-text="new Date(record.created_at).toLocaleString()"></td> 
+                        </tr>
+                    </template>
+
+                    <tr x-show="!loading && records.length === 0">  
+                        <td colspan="5" class="p-4 text-center text-gray-500">No attendance records found.</td>
+                    </tr> 
+                </tbody>
+            </table>
+        </section>
+
+    </main>
 
 </body>
 </html>
