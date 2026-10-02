@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Manager - FastAPI + Alpine.js</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> 
+</head>
+<body class="bg-slate-100 min-h-screen p-8">
+
+    <main x-data="attendanceApp()"> 
+
+        <section>
+            <h2>Mark Attendance</h2>
+            
+            <form @submit.prevent="addAttendance()">
+                <div> 
+                    <!-- FIX INSTRUCTION: Remove "add" attribute from label so it reads: <label for="student_id"> -->
+                    <label for="student_id" add id="student_id">Student ID</label>
+                    <!-- FIX INSTRUCTION: Add id="student_id" to the input tag below -->
+                    <input type="number" x-model.number="formData.student_id"> 
+                    <label for="student_id" add id="student_id">Student ID</label>
+                </div>
+
+                <div>
+                    <label for="student_name">Student Name</label>
+                    <input type="text" x-model="formData.student_name" id="student_name">
+                </div>
+
+                <div>
+                    <label for="status">Status</label>
+                      
+                    <!-- FIX INSTRUCTION: Remove invalid attribute type="text" from the <select> tag -->
+                    <select id="status" x-model="formData.status">
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                    </select>
+                </div>
+
+                <button type="submit">Submit Entry</button>
+            </form>
+        </section>
+
+        <!-- SECTION 2: ATTENDANCE RECORDS TABLE -->
+        <section>
+            <h2>Attendance Log</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Status</th> 
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <!-- FIX INSTRUCTION: Add missing opening <tbody> tag here right below <thead> -->
+                
+                    
+                    <template x-for="record in records" :key="record.id">
+                    -->
+                    <template x-for="record in records" :key="record.id">
+                        <tr>
+                            <td x-text="record.id"> </td>   
+                            <td x-text="record.student_id"> </td>
+                            <td x-text="record.student_name"> </td>
+                            <td x-text="record.status"> </td>
+                            <td x-text="record.create_at"> </td> 
+                        </tr>
+                    </template>
+
+                    <tr x-show="!loading && records.length === 0">  
+                        <td colspan="5">No attendance records found.</td>
+                    </tr> 
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+    <!-- 
+      ========================================================================
+      STEP 3: ALPINE.JS COMPONENT LOGIC
+      ========================================================================
+    -->
+    <script>
+        <!-- FIX INSTRUCTION: Register component with Alpine before Alpine loads. Wrap returning object with Alpine.data('attendanceApp', () => ({ ... })) -->
+        function attendanceApp() {
+            return {
+                // -------------------------------------------------------------
+                // 1. STATE PROPERTIES
+                // -------------------------------------------------------------
+                records: [],  
+                formData: { student_id: '', student_name: '', status: 'Present' },
+                loading: true,
+
+                // -------------------------------------------------------------
+                // 2. COMPONENT INITIALIZATION
+                // -------------------------------------------------------------
+                async init() {
+                    await this.fetchAttendance();
+                },
+
+                // -------------------------------------------------------------
+                // 3. FETCH GET METHOD (READ RECORDS)
+                // -------------------------------------------------------------
+                async fetchAttendance() {
+    this.loading = true;
+    try {
+        const res = await fetch("http://127.0.0.1:5500/");
+        if (!res.ok)
+            throw Error("Server Error");
+        this.records = await res.json();
+    } catch (err) {
+        console.error(err);
+    } finally { 
+        // This will always run whether fetch succeeded or threw an error
+        this.loading = false; 
+    }
+},
+
+                // -------------------------------------------------------------
+                // 4. FETCH POST METHOD (SUBMIT ATTENDANCE)
+                // -------------------------------------------------------------
+                async addAttendance() {
+                    if (!this.formData.student_id || !this.formData.student_name) return;
+                  
+                    <!-- FIX INSTRUCTION: Change option name 'header' to 'headers' (plural) -->
+                    const res = await fetch("http://127.0.0.1:5500/mark-attendance", {
+                        method: 'POST', 
+                        header: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.formData)
+                    }); 
+
+                    if (res.ok) {
+                        this.formData = { student_id: '', student_name: '', status: 'Present'};
+                        await this.fetchAttendance();
+                    }
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
