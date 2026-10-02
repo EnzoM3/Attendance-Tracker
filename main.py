@@ -30,7 +30,13 @@ Base.metadata.create_all(bind=engine)
 
 # --- FASTAPI APP & DEPENDENCY ---
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows Live Server at 127.0.0.1:5500 to connect
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 def get_db():
     db = SessionLocal()
     try:
